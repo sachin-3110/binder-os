@@ -19,7 +19,7 @@ export const Shell = ({ children, currentView, setView, user, onLogout }) => {
   ];
 
   const filteredMenuItems = menuItems.filter((item) =>
-    item.label.toLowerCase().includes(searchQuery.toLowerCase())
+    item.label.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -58,7 +58,6 @@ export const Shell = ({ children, currentView, setView, user, onLogout }) => {
             {!isCollapsed && (
               <div className="sidebar-logo-meta">
                 <span className="sidebar-logo-title">BINDER-OS</span>
-                <span className="sidebar-logo-subtitle">Enterprise Suite</span>
               </div>
             )}
           </div>
@@ -67,8 +66,8 @@ export const Shell = ({ children, currentView, setView, user, onLogout }) => {
         {/* Search Box in Sidebar */}
         <div className="sidebar-search-area">
           {isCollapsed ? (
-            <button 
-              className="sidebar-search-icon-only" 
+            <button
+              className="sidebar-search-icon-only"
               onClick={() => setIsCollapsed(false)}
               title="Search Modules"
             >
@@ -77,16 +76,16 @@ export const Shell = ({ children, currentView, setView, user, onLogout }) => {
           ) : (
             <div className="sidebar-search-box">
               <Icon name="search" size={14} className="search-box-icon" />
-              <input 
-                type="text" 
-                placeholder="Search..." 
+              <input
+                type="text"
+                placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="sidebar-search-input"
               />
               {searchQuery && (
-                <button 
-                  onClick={() => setSearchQuery("")} 
+                <button
+                  onClick={() => setSearchQuery("")}
                   className="search-clear-btn"
                   title="Clear search"
                 >
@@ -119,9 +118,7 @@ export const Shell = ({ children, currentView, setView, user, onLogout }) => {
             );
           })}
           {filteredMenuItems.length === 0 && !isCollapsed && (
-            <div className="search-no-results">
-              No modules found
-            </div>
+            <div className="search-no-results">No modules found</div>
           )}
         </nav>
 
@@ -171,7 +168,9 @@ export const Shell = ({ children, currentView, setView, user, onLogout }) => {
           </div>
 
           <div className="sidebar-theme-row">
-            {!isCollapsed && <span className="theme-row-label">Theme Settings</span>}
+            {!isCollapsed && (
+              <span className="theme-row-label">Theme Settings</span>
+            )}
             <ThemeToggle />
           </div>
         </div>
