@@ -14,6 +14,8 @@ export const CodeCreation = ({ user }) => {
   ]);
 
   const [isRunning, setIsRunning] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const templates = [
     { id: 'sku', name: 'Product SKU Generator', desc: 'Creates unique items and product codes based on category prefixes.' },
@@ -78,6 +80,12 @@ export default async function runComplianceAudit() {
     }
   }, [selectedTemplate, prefix, module, action]);
 
+  const handleCopy = () => {
+    navigator.clipboard.writeText(generatedCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const handleRunScript = () => {
     setIsRunning(true);
     setTimeout(() => {
@@ -96,7 +104,7 @@ export default async function runComplianceAudit() {
         ...prev
       ]);
       setIsRunning(false);
-      alert(`Automation ${newRunId} compiled and executed successfully!`);
+      setShowModal(true);
     }, 1200);
   };
 
@@ -197,8 +205,43 @@ export default async function runComplianceAudit() {
                 <span className="window-dot yellow" />
                 <span className="window-dot green" />
                 <span className="window-filename">compiled_workflow.js</span>
+                <button 
+                  type="button"
+                  className="btn-window-action"
+                  onClick={() => setShowModal(true)}
+                  style={{
+                    marginLeft: 'auto',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: '4px',
+                    color: '#E2E8F0',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    padding: '4px 8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    transition: 'all 0.2s'
+                  }}
+                  title="Expand to copy & use"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                  </svg>
+                  <span>Open Popup</span>
+                </button>
               </div>
-              <pre className="code-content-block">
+              <pre className="code-content-block" onClick={() => setShowModal(true)} style={{ cursor: 'pointer' }} title="Click to open popup and copy">
                 <code>{generatedCode}</code>
               </pre>
             </div>
@@ -240,6 +283,63 @@ export default async function runComplianceAudit() {
           </table>
         </div>
       </section>
+
+      {/* Code Popup Modal */}
+      {showModal && (
+        <div className="code-modal-backdrop" onClick={() => setShowModal(false)}>
+          <div className="code-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="code-modal-header">
+              <h3>Compiled Automation Code</h3>
+              <button className="code-modal-close-btn" onClick={() => setShowModal(false)}>&times;</button>
+            </div>
+            <div className="code-modal-body">
+              <pre className="code-modal-pre">
+                <code>{generatedCode}</code>
+              </pre>
+            </div>
+            <div className="code-modal-footer">
+              <button 
+                type="button" 
+                className={`btn ${copied ? 'btn-success' : 'btn-primary'}`} 
+                onClick={handleCopy}
+              >
+                {copied ? (
+                  <>
+                    <Icon name="check" size={16} style={{ marginRight: 6 }} />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={{ marginRight: 6 }}
+                    >
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                    Copy Code
+                  </>
+                )}
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-secondary" 
+                onClick={() => setShowModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         .code-container {
@@ -442,6 +542,132 @@ export default async function runComplianceAudit() {
           border-radius: 50%;
           border-top-color: #FFFFFF;
           animation: spin 0.8s linear infinite;
+        }
+
+        /* Modal Backdrop */
+        .code-modal-backdrop {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background-color: rgba(15, 23, 42, 0.8);
+          backdrop-filter: blur(8px);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 1000;
+          animation: fadeIn 0.2s ease-out;
+        }
+
+        /* Modal Card */
+        .code-modal-card {
+          width: 90%;
+          max-width: 650px;
+          background-color: #1E293B;
+          border: 1px solid #334155;
+          border-radius: var(--border-radius-lg, 12px);
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.5);
+          display: flex;
+          flex-direction: column;
+          max-height: 85vh;
+          overflow: hidden;
+          animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .code-modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 16px 20px;
+          border-bottom: 1px solid #334155;
+          background-color: #0F172A;
+        }
+
+        .code-modal-header h3 {
+          margin: 0;
+          font-size: 16px;
+          font-weight: 600;
+          color: #F8FAFC;
+        }
+
+        .code-modal-close-btn {
+          background: none;
+          border: none;
+          color: #94A3B8;
+          font-size: 24px;
+          cursor: pointer;
+          line-height: 1;
+          padding: 0;
+          transition: color 0.2s;
+        }
+
+        .code-modal-close-btn:hover {
+          color: #F8FAFC;
+        }
+
+        .code-modal-body {
+          padding: 20px;
+          overflow-y: auto;
+          background-color: #0F172A;
+          flex: 1;
+        }
+
+        .code-modal-pre {
+          margin: 0;
+          background-color: #1E293B;
+          padding: 16px;
+          border-radius: 8px;
+          border: 1px solid #334155;
+          overflow-x: auto;
+        }
+
+        .code-modal-pre code {
+          font-family: 'Courier New', Courier, monospace;
+          font-size: 13px;
+          color: #E2E8F0;
+          line-height: 1.6;
+          white-space: pre;
+          display: block;
+        }
+
+        .code-modal-footer {
+          display: flex;
+          justify-content: flex-end;
+          gap: 12px;
+          padding: 16px 20px;
+          border-top: 1px solid #334155;
+          background-color: #0F172A;
+        }
+
+        .btn-secondary {
+          background-color: #334155;
+          color: #F8FAFC;
+          border: 1px solid #475569;
+        }
+
+        .btn-secondary:hover {
+          background-color: #475569;
+        }
+
+        .btn-success {
+          background-color: #10B981;
+          color: #FFFFFF;
+          border: 1px solid #059669;
+        }
+
+        .btn-success:hover {
+          background-color: #059669;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        @keyframes scaleUp {
+          from { transform: scale(0.95); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
         }
       `}</style>
     </div>

@@ -4,9 +4,16 @@ import { Icon } from '../components/Icon';
 export const Auth = ({ onLoginSuccess }) => {
   const [activeTab, setActiveTab] = useState('login'); // 'login' | 'register'
   
+  // Registered users list state
+  const [users, setUsers] = useState(() => {
+    const saved = localStorage.getItem('registered_users');
+    if (saved) return JSON.parse(saved);
+    return [{ name: 'Sachin', email: 'sachin@gmail.com', password: 'qwerty123' }];
+  });
+
   // Login fields
-  const [loginEmail, setLoginEmail] = useState('shubh.saxena@erpbinder.com');
-  const [loginPassword, setLoginPassword] = useState('qwerty@22');
+  const [loginEmail, setLoginEmail] = useState('sachin@gmail.com');
+  const [loginPassword, setLoginPassword] = useState('qwerty123');
   
   // Register fields
   const [regName, setRegName] = useState('');
@@ -30,13 +37,25 @@ export const Auth = ({ onLoginSuccess }) => {
         return;
       }
       
-      // Allow the reference credentials or any format for demo
-      const displayName = loginEmail.split('@')[0];
-      const capitalizedName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
+      const matchedUser = users.find(
+        (u) => u.email.toLowerCase() === loginEmail.toLowerCase()
+      );
+
+      if (!matchedUser) {
+        setError('User not found. Please register.');
+        setLoading(false);
+        return;
+      }
+
+      if (matchedUser.password !== loginPassword) {
+        setError('Incorrect password.');
+        setLoading(false);
+        return;
+      }
       
       onLoginSuccess({
-        name: capitalizedName,
-        email: loginEmail
+        name: matchedUser.name,
+        email: matchedUser.email
       });
       setLoading(false);
     }, 800);
@@ -59,6 +78,20 @@ export const Auth = ({ onLoginSuccess }) => {
         setLoading(false);
         return;
       }
+
+      const emailExists = users.some(
+        (u) => u.email.toLowerCase() === regEmail.toLowerCase()
+      );
+
+      if (emailExists) {
+        setError('Email is already registered. Please sign in.');
+        setLoading(false);
+        return;
+      }
+
+      const updatedUsers = [...users, { name: regName, email: regEmail, password: regPassword }];
+      setUsers(updatedUsers);
+      localStorage.setItem('registered_users', JSON.stringify(updatedUsers));
 
       onLoginSuccess({
         name: regName,
@@ -135,7 +168,7 @@ export const Auth = ({ onLoginSuccess }) => {
 
             <div className="credentials-tip">
               <span className="tip-badge">DEMO CREDS</span>
-              <span className="tip-text">shubh.saxena@erpbinder.com / qwerty@22</span>
+              <span className="tip-text">sachin@gmail.com / qwerty123</span>
             </div>
 
             <button type="submit" className="btn btn-primary auth-submit-btn" disabled={loading}>

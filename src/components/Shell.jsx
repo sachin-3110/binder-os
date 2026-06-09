@@ -1,8 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Icon } from "./Icon";
+import { useTheme } from "../context/ThemeContext";
 
 export const Shell = ({ children, currentView, setView, user, onLogout }) => {
+  const { theme, setTheme } = useTheme();
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
   const menuItems = [
     { id: "dashboard", label: "Home", icon: "home" },
     { id: "tasks", label: "Tasks", icon: "tasks" },
@@ -11,6 +17,10 @@ export const Shell = ({ children, currentView, setView, user, onLogout }) => {
     { id: "purchase", label: "Purchase", icon: "purchase" },
     { id: "ims", label: "IMS", icon: "ims" },
   ];
+
+  const filteredMenuItems = menuItems.filter((item) =>
+    item.label.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="shell-wrapper">
@@ -33,17 +43,62 @@ export const Shell = ({ children, currentView, setView, user, onLogout }) => {
       </header>
 
       {/* Desktop Sidebar */}
-      <aside className="desktop-sidebar">
-        <div className="sidebar-logo">
-          <span className="sidebar-logo-icon">BE</span>
-          <div className="sidebar-logo-meta">
-            <span className="sidebar-logo-title">BINDER-OS</span>
-            <span className="sidebar-logo-subtitle">Enterprise Suite</span>
+
+      <aside className={`desktop-sidebar ${isCollapsed ? "collapsed" : ""}`}>
+        <div className="sidebar-logo-btn">
+          <div className="sidebar-logo">
+            <button
+              className="sidebar-collapse-btn"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+            >
+              {"☰"}
+            </button>
+            <span className="sidebar-logo-icon">BE</span>
+            {!isCollapsed && (
+              <div className="sidebar-logo-meta">
+                <span className="sidebar-logo-title">BINDER-OS</span>
+                <span className="sidebar-logo-subtitle">Enterprise Suite</span>
+              </div>
+            )}
           </div>
         </div>
 
+        {/* Search Box in Sidebar */}
+        <div className="sidebar-search-area">
+          {isCollapsed ? (
+            <button 
+              className="sidebar-search-icon-only" 
+              onClick={() => setIsCollapsed(false)}
+              title="Search Modules"
+            >
+              <Icon name="search" size={16} />
+            </button>
+          ) : (
+            <div className="sidebar-search-box">
+              <Icon name="search" size={14} className="search-box-icon" />
+              <input 
+                type="text" 
+                placeholder="Search..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="sidebar-search-input"
+              />
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery("")} 
+                  className="search-clear-btn"
+                  title="Clear search"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
         <nav className="sidebar-nav">
-          {menuItems.map((item) => {
+          {filteredMenuItems.map((item) => {
             const isActive = currentView === item.id;
             return (
               <button
@@ -56,27 +111,67 @@ export const Shell = ({ children, currentView, setView, user, onLogout }) => {
                   size={20}
                   className={`nav-icon ${isActive ? "active-icon" : ""}`}
                 />
-                <span className="nav-label">{item.label}</span>
+                {!isCollapsed && (
+                  <span className="nav-label">{item.label}</span>
+                )}
                 {isActive && <div className="active-nav-indicator" />}
               </button>
             );
           })}
+          {filteredMenuItems.length === 0 && !isCollapsed && (
+            <div className="search-no-results">
+              No modules found
+            </div>
+          )}
         </nav>
 
         <div className="sidebar-footer">
-          <div className="sidebar-user-card">
+          {showProfileMenu && (
+            <div className="profile-popover">
+              <div className="popover-header">User Options</div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onLogout();
+                  setShowProfileMenu(false);
+                }}
+                className="popover-item logout-item"
+              >
+                <span className="logout-dot-sm" />
+                {!isCollapsed && <span>Log Out</span>}
+              </button>
+            </div>
+          )}
+
+          <div
+            className="sidebar-user-card"
+            onClick={() => setShowProfileMenu(!showProfileMenu)}
+          >
             <div className="user-avatar-wrap">
               <Icon name="user" size={18} />
             </div>
-            <div className="sidebar-user-info">
-              <span className="user-name">{user?.name || "User"}</span>
-              <span className="user-role">Administrator</span>
-            </div>
-            <button className="btn-logout" onClick={onLogout} title="Logout">
-              <span className="logout-dot"></span>
-            </button>
+            {!isCollapsed && (
+              <div className="sidebar-user-info">
+                <span className="user-name">{user?.name || "User"}</span>
+                <span className="user-role">Administrator</span>
+              </div>
+            )}
+            {!isCollapsed && (
+              <button
+                className="btn-logout"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onLogout();
+                }}
+                title="Logout"
+              >
+                <span className="logout-dot"></span>
+              </button>
+            )}
           </div>
+
           <div className="sidebar-theme-row">
+            {!isCollapsed && <span className="theme-row-label">Theme Settings</span>}
             <ThemeToggle />
           </div>
         </div>
@@ -105,6 +200,11 @@ export const Shell = ({ children, currentView, setView, user, onLogout }) => {
       </nav>
 
       <style>{`
+      .sidebar-logo-btn{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
         .shell-wrapper {
           display: flex;
           height: 100vh;
@@ -123,6 +223,69 @@ export const Shell = ({ children, currentView, setView, user, onLogout }) => {
           border-right: 1px solid var(--color-border);
           padding: 24px 16px;
           height: 100%;
+          transition: width var(--transition-normal), padding var(--transition-normal);
+        }
+
+        .desktop-sidebar.collapsed {
+          width: 78px;
+          padding: 24px 12px;
+        }
+
+        .desktop-sidebar.collapsed .sidebar-search-area {
+          padding: 16px 0 0 0;
+        }
+
+        .desktop-sidebar.collapsed .sidebar-logo {
+          flex-direction: column;
+          justify-content: center;
+          gap: 8px;
+          padding: 0 0 24px 0;
+        }
+
+        .desktop-sidebar.collapsed .sidebar-nav-item {
+          justify-content: center;
+          padding: 12px;
+        }
+
+        .desktop-sidebar.collapsed .active-nav-indicator {
+          right: 4px;
+        }
+
+        .desktop-sidebar.collapsed .sidebar-user-card {
+          justify-content: center;
+          padding: 10px 0;
+        }
+
+        .desktop-sidebar.collapsed .profile-popover {
+          left: 78px;
+          bottom: 16px;
+          width: 200px;
+          right: auto;
+        }
+
+        .sidebar-collapse-btn {
+          background: transparent;
+          border: none;
+          color: var(--color-text-secondary);
+          cursor: pointer;
+          font-size: 14px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 28px;
+          height: 28px;
+          border-radius: var(--border-radius-sm);
+          margin-left: auto;
+          transition: all var(--transition-fast);
+        }
+
+        .sidebar-collapse-btn:hover {
+          background-color: var(--color-border);
+          color: var(--color-text-primary);
+        }
+
+        .desktop-sidebar.collapsed .sidebar-collapse-btn {
+          margin-left: 0;
         }
 
         .sidebar-logo {
@@ -131,6 +294,108 @@ export const Shell = ({ children, currentView, setView, user, onLogout }) => {
           gap: 12px;
           padding: 0 8px 24px 8px;
           border-bottom: 1px solid var(--color-border);
+        }
+
+        /* Search Box in Sidebar */
+        .sidebar-search-area {
+          padding: 16px 8px 0 8px;
+        }
+
+        .sidebar-search-box {
+          display: flex;
+          align-items: center;
+          background-color: var(--color-bg);
+          border: 1px solid var(--color-border);
+          border-radius: var(--border-radius-md);
+          padding: 8px 12px;
+          gap: 8px;
+          position: relative;
+          transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+        }
+
+        .sidebar-search-box:focus-within {
+          border-color: var(--color-brand);
+          box-shadow: 0 0 0 2px var(--color-brand-light);
+        }
+
+        .search-box-icon {
+          color: var(--color-text-secondary);
+        }
+
+        .sidebar-search-input {
+          background: transparent;
+          border: none;
+          outline: none;
+          font-size: 13px;
+          color: var(--color-text-primary);
+          width: 100%;
+          padding: 0;
+        }
+
+        .search-clear-btn {
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          color: var(--color-text-tertiary);
+          font-size: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 2px;
+        }
+
+        .search-clear-btn:hover {
+          color: var(--color-text-primary);
+        }
+
+        .sidebar-search-icon-only {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 36px;
+          height: 36px;
+          background-color: var(--color-bg);
+          border: 1px solid var(--color-border);
+          border-radius: var(--border-radius-md);
+          color: var(--color-text-secondary);
+          cursor: pointer;
+          transition: all var(--transition-fast);
+          margin: 0 auto;
+        }
+
+        .sidebar-search-icon-only:hover {
+          border-color: var(--color-brand);
+          color: var(--color-brand);
+          background-color: var(--color-surface);
+        }
+
+        .search-no-results {
+          padding: 16px 8px;
+          font-size: 12px;
+          color: var(--color-text-tertiary);
+          text-align: center;
+        }
+
+        /* Sidebar theme row outside popover */
+        .sidebar-theme-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 12px 8px 0 8px;
+          border-top: 1px solid var(--color-border);
+          margin-top: 8px;
+          width: 100%;
+        }
+
+        .desktop-sidebar.collapsed .sidebar-theme-row {
+          justify-content: center;
+          padding: 12px 0 0 0;
+        }
+
+        .theme-row-label {
+          font-size: 12px;
+          color: var(--color-text-secondary);
+          font-weight: 500;
         }
 
         .sidebar-logo-icon {
@@ -225,6 +490,99 @@ export const Shell = ({ children, currentView, setView, user, onLogout }) => {
           gap: 16px;
           border-top: 1px solid var(--color-border);
           padding-top: 16px;
+          position: relative;
+        }
+
+        .profile-popover {
+          position: absolute;
+          bottom: 85px;
+          left: 0;
+          right: 0;
+          background-color: var(--color-surface);
+          border: 1px solid var(--color-border);
+          border-radius: var(--border-radius-md);
+          box-shadow: var(--shadow-lg);
+          padding: 12px;
+          z-index: 50;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          animation: popoverSlideUp var(--transition-fast) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes popoverSlideUp {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .popover-header {
+          font-size: 10px;
+          font-weight: 700;
+          color: var(--color-text-secondary);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-bottom: 6px;
+          padding: 0 8px;
+        }
+
+        .popover-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 8px 12px;
+          border-radius: var(--border-radius-sm);
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--color-text-secondary);
+          text-align: left;
+          width: 100%;
+          transition: all var(--transition-fast);
+        }
+
+        .popover-item:hover {
+          background-color: var(--color-bg);
+          color: var(--color-text-primary);
+        }
+
+        .popover-item.active {
+          background-color: var(--color-brand-light);
+          color: var(--color-brand);
+        }
+
+        .popover-item .check-icon {
+          margin-left: auto;
+          color: var(--color-brand);
+        }
+
+        .popover-divider {
+          height: 1px;
+          background-color: var(--color-border);
+          margin: 4px 0;
+        }
+
+        .logout-item {
+          color: #EF4444;
+        }
+
+        .logout-item:hover {
+          background-color: rgba(239, 68, 68, 0.05);
+          color: #EF4444;
+        }
+
+        .logout-dot-sm {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background-color: #EF4444;
         }
 
         .sidebar-user-card {
@@ -235,6 +593,12 @@ export const Shell = ({ children, currentView, setView, user, onLogout }) => {
           padding: 10px;
           border-radius: var(--border-radius-md);
           position: relative;
+          cursor: pointer;
+          transition: background-color var(--transition-fast);
+        }
+
+        .sidebar-user-card:hover {
+          background-color: var(--color-border-hover);
         }
 
         .user-avatar-wrap {

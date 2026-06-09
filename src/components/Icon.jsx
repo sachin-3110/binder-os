@@ -66,6 +66,12 @@ export const Icon = ({ name, size = 20, className = '', ...props }) => {
     filter: (
       <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
     ),
+    search: (
+      <>
+        <circle cx="11" cy="11" r="8" />
+        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+      </>
+    ),
     calendar: (
       <>
         <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
